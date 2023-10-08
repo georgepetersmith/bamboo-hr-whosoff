@@ -1,4 +1,4 @@
-use crate::time_off_response::{Calendar, Item};
+use crate::time_off_response::*;
 use chrono::{NaiveDate, Utc};
 use reqwest::blocking::Client;
 use serde_xml_rs::from_str;
@@ -48,8 +48,6 @@ fn get_whos_off(date: NaiveDate) -> Result<Vec<Item>, Box<dyn std::error::Error>
 
 #[cfg(test)]
 mod tests {
-    use crate::time_off_response::{Calendar, Employee, Item, ItemType, Request};
-
     use super::*;
 
     #[test]
