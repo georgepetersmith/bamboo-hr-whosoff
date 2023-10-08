@@ -1,5 +1,5 @@
-use serde::{Serialize, Deserialize};
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
 
 use crate::date_serializer;
 

@@ -1,11 +1,11 @@
+use crate::time_off_response::{Calendar, Item};
 use chrono::{NaiveDate, Utc};
 use reqwest::blocking::Client;
 use serde_xml_rs::from_str;
 use std::env;
-use crate::calendar::{Calendar, Item};
 
-mod calendar;
 mod date_serializer;
+mod time_off_response;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let today = Utc::now().naive_utc().date();
@@ -48,7 +48,7 @@ fn get_whos_off(date: NaiveDate) -> Result<Vec<Item>, Box<dyn std::error::Error>
 
 #[cfg(test)]
 mod tests {
-    use crate::calendar::{Calendar, Item, ItemType, Request, Employee};
+    use crate::time_off_response::{Calendar, Employee, Item, ItemType, Request};
 
     use super::*;
 
