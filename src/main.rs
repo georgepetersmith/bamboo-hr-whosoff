@@ -1,21 +1,30 @@
-use crate::time_off_response::*;
 use chrono::{NaiveDate, Utc};
 use reqwest::blocking::Client;
-use serde_xml_rs::from_str;
+use serde::Deserialize;
 use std::env;
 
 mod date_serializer;
-mod time_off_response;
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WhosOff {
+    name: String,
+    #[serde(with = "date_serializer")]
+    start: NaiveDate,
+    #[serde(with = "date_serializer")]
+    end: NaiveDate,
+}
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let today = Utc::now().naive_utc().date();
-    let whos_off_today = get_whos_off(today)?;
-    println!("{:#?}", whos_off_today);
+    get_whos_off(today)?
+        .iter()
+        .for_each(|x| println!("{}", x.name));
 
     Ok(())
 }
 
-fn get_whos_off(date: NaiveDate) -> Result<Vec<Item>, Box<dyn std::error::Error>> {
+fn get_whos_off(date: NaiveDate) -> Result<Vec<WhosOff>, Box<dyn std::error::Error>> {
     // This can be a random string. The Bamboo HR API only uses the API key as the username.
     const PASSWORD: &str = "x";
 
@@ -32,68 +41,15 @@ fn get_whos_off(date: NaiveDate) -> Result<Vec<Item>, Box<dyn std::error::Error>
 
     let request = client
         .get(format!("{base_url}/time_off/whos_out"))
+        .header("accept", "application/json")
         .basic_auth(api_key, Some(PASSWORD));
 
-    let response_body = request.send()?.text()?;
-    let response: Calendar = from_str(response_body.as_str())?;
+    let response: Vec<WhosOff> = request.send()?.json()?;
 
     let filtered_response = response
-        .items
         .into_iter()
         .filter(|x| x.start <= date && date <= x.end)
-        .collect::<Vec<Item>>();
+        .collect::<Vec<WhosOff>>();
 
     Ok(filtered_response)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test() {
-        let response_body = r#"
-            <calendar>
-             <item type="timeOff">
-              <request id="10422"/>
-              <employee id="13">George Smith</employee>
-              <start>2023-08-29</start>
-              <end>2023-09-25</end>
-             </item>
-             <item type="timeOff">
-              <request id="10423"/>
-              <employee id="14">Peter Smith</employee>
-              <start>2023-09-12</start>
-              <end>2023-09-14</end>
-             </item>
-            </calendar>"#;
-
-        let expected = Calendar {
-            items: Vec::from([
-                Item {
-                    r#type: ItemType::TimeOff,
-                    request: Request { id: 10422 },
-                    employee: Employee {
-                        id: 13,
-                        name: String::from("George Smith"),
-                    },
-                    start: NaiveDate::from_ymd_opt(2023, 8, 29).unwrap(),
-                    end: NaiveDate::from_ymd_opt(2023, 9, 25).unwrap(),
-                },
-                Item {
-                    r#type: ItemType::TimeOff,
-                    request: Request { id: 10423 },
-                    employee: Employee {
-                        id: 14,
-                        name: String::from("Peter Smith"),
-                    },
-                    start: NaiveDate::from_ymd_opt(2023, 9, 12).unwrap(),
-                    end: NaiveDate::from_ymd_opt(2023, 9, 14).unwrap(),
-                },
-            ]),
-        };
-
-        let serialised_response: Calendar = from_str(response_body).unwrap();
-        assert_eq!(serialised_response, expected);
-    }
 }
