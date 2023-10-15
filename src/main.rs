@@ -1,9 +1,19 @@
 use chrono::{NaiveDate, Utc};
+use clap::Parser;
 use reqwest::blocking::Client;
 use serde::Deserialize;
 use std::env;
 
 mod date_serializer;
+
+#[derive(Parser, Debug)]
+struct Args {
+    /// The date on which to check who is off.
+    #[arg(short, long)]
+    #[arg(value_parser = date_serializer::parse_from_str)]
+    #[arg(default_value_t = Utc::now().naive_utc().date())]
+    date: NaiveDate,
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,10 +26,13 @@ struct WhosOff {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let today = Utc::now().naive_utc().date();
-    get_whos_off(today)?
+    let args = Args::parse();
+
+    println!("Who is off on {}:\r\n", &args.date);
+
+    get_whos_off(args.date)?
         .iter()
-        .for_each(|x| println!("{}", x.name));
+        .for_each(|x| println!("{}", &x.name));
 
     Ok(())
 }
