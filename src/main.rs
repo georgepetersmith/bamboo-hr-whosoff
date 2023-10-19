@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     get_whos_off(args.date)?
         .iter()
-        .for_each(|x| println!("{}", &x.name));
+        .for_each(|x| println!("{} -> {} {}", &x.start, &x.end, &x.name));
 
     Ok(())
 }
