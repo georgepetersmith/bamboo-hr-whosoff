@@ -30,7 +30,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Who is off on {}:\r\n", &args.date);
 
-    get_whos_off(args.date)?
+    let mut whos_off = get_whos_off(args.date)?;
+    whos_off.sort_by(|a, b| a.end.cmp(&b.end));
+    whos_off
         .iter()
         .for_each(|x| println!("{} -> {} {}", &x.start, &x.end, &x.name));
 
